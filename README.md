@@ -536,8 +536,6 @@ uvicorn main_testing:app --reload
 # Check logs/app.log for detailed errors
 ```
 
-**See:** [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) troubleshooting section
-
 ---
 
 ## Roadmap
@@ -585,9 +583,8 @@ Contributions are welcome! Please follow these guidelines:
 ## Support
 
 ### Documentation
-- **Security:** [SECURITY.md](SECURITY.md)
-- **Deployment:** [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md)
-- **Testing:** [SECURITY_TESTING.md](SECURITY_TESTING.md)
+- **Security:** [SECURITY.md](/docs/SECURITY.md)
+- **Testing:** [SECURITY_TESTING.md](/docs/SECURITY_TESTING.md)
 
 ### Getting Help
 - Check documentation files first

@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block title %}Chat with {{ other_user.full_name }} — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+  
+  <!-- Success Message -->
+  {% if request.query_params.get('success') %}
+  <div class="alert" style="background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+    ✅ {{ request.query_params.get('success') }}
+  </div>
+  {% endif %}
+
+  <!-- Chat Header -->
+  <div class="chat-header">
+    <div class="chat-participant">
+      <div class="chat-avatar-lg">{{ other_user.full_name[0] | upper }}</div>
+      <div>
+        <h2>
+          {{ other_user.full_name }}
+          {% if other_user.verification_status == 'approved' %}
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background: #f0fdf4; color: #166534; border-radius: 6px; font-size: 0.75rem; font-weight: 600; vertical-align: middle; margin-left: 0.5rem;">
+            ✓ Verified
+          </span>
+          {% endif %}
+        </h2>
+        <p class="text-muted">
+          {{ other_user.role.value | title }}
+          <span style="margin-left: 0.75rem; color: #16a34a;">🔒 End-to-end encrypted</span>
+        </p>
+      </div>
+    </div>
+    <a href="/chats/" class="btn btn-outline">← Back to Chats</a>
+  </div>
+
+  <!-- Messages Container -->
+  <div class="messages-container" id="messages-container">
+    {% for message in messages %}
+    <div class="message {% if message.sender_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+      <div class="message-content">
+        <strong>{% if message.sender_id == current_user.id %}You{% else %}{{ other_user.full_name }}{% endif %}:</strong>
+        <p>{{ message.content }}</p>
+      </div>
+      <span class="message-timestamp">{{ message.created_at.strftime('%H:%M') }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Message Input -->
+  <div class="message-input-container">
+    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
+    <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+  </div>
+
+  <!-- Booking Proposals Section -->
+  <div class="proposals-section">
+    <h3>📋 Booking Proposals</h3>
+    
+    <!-- Create New Proposal Button -->
+    <button onclick="toggleProposalForm()" class="btn btn-outline btn-sm" id="toggle-proposal-btn">
+      + Create Booking Proposal
+    </button>
+
+    <!-- Create Proposal Form -->
+    <div id="proposal-form" class="proposal-form" style="display: none;">
+      <form method="POST" action="/chats/{{ chat.id }}/proposals" autocomplete="off">
+        <h4>New Booking Proposal</h4>
+        
+        <input type="hidden" name="worker_id" value="{{ other_user.id if current_user.role.value == 'client' else current_user.id }}" />
+        <input type="hidden" name="client_id" value="{{ current_user.id if current_user.role.value == 'client' else other_user.id }}" />
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="proposal_rate">Hourly Rate (QAR)</label>
+            <input type="number" name="agreed_rate" id="proposal_rate" step="0.01" min="1" required placeholder="e.g. 75" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="proposal_hours">Duration (hours)</label>
+            <input type="number" name="duration_hours" id="proposal_hours" step="0.5" min="0.5" required placeholder="e.g. 4" autocomplete="off" />
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="proposal_notes">Notes (optional)</label>
+          <textarea name="notes" id="proposal_notes" rows="2" placeholder="Any additional details..." autocomplete="off"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" onclick="toggleProposalForm()" class="btn btn-outline btn-sm">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Create Proposal</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Existing Proposals -->
+    {% if proposals %}
+    <div class="proposals-list">
+      {% for proposal in proposals %}
+      <div class="booking-proposal proposal-{{ proposal.status.value }}" id="proposal-{{ proposal.id }}">
+        <div class="proposal-header">
+          <span class="proposal-status-badge status-{{ proposal.status.value }}">
+            {{ proposal.status.value | title }}
+          </span>
+          <span class="text-muted">Proposed by {{ proposal.proposed_by.full_name }}</span>
+        </div>
+
+        <div class="proposal-details">
+          <div class="proposal-row">
+            <span>Rate:</span>
+            <strong>QAR {{ "%.2f"|format(proposal.agreed_rate) }}/hour</strong>
+          </div>
+          <div class="proposal-row">
+            <span>Duration:</span>
+            <strong>{{ proposal.duration_hours }} hours</strong>
+          </div>
+          <div class="proposal-row proposal-total">
+            <span>Total:</span>
+            <strong>QAR {{ "%.2f"|format(proposal.total_amount) }}</strong>
+          </div>
+          {% if proposal.notes %}
+          <div class="proposal-notes">
+            <em>Note: {{ proposal.notes }}</em>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Acceptance Status -->
+        <div class="proposal-acceptance">
+          <div class="acceptance-row">
+            Client accepted: 
+            {% if proposal.client_accepted %}
+              <span class="acceptance-check">✅</span>
+            {% else %}
+              <span class="acceptance-pending">⏳</span>
+            {% endif %}
+          </div>
+          <div class="acceptance-row">
+            Worker accepted: 
+            {% if proposal.worker_accepted %}
+              <span class="acceptance-check">✅</span>
+            {% else %}
+              <span class="acceptance-pending">⏳</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        {% if proposal.status.value == 'pending' %}
+          {% if current_user.id == proposal.client_id and not proposal.client_accepted %}
+          <form method="POST" action="/chats/proposals/{{ proposal.id }}/accept" style="display: inline;">
+            <button type="submit" class="btn btn-success btn-sm">✅ Accept as Client</button>
+          </form>
+          <form method="POST" action="/chats/proposals/{{ proposal.id }}/reject" style="display: inline;">
+            <button type="submit" class="btn btn-danger btn-sm">❌ Reject</button>
+          </form>
+          {% elif current_user.id == proposal.worker_id and not proposal.worker_accepted %}
+          <form method="POST" action="/chats/proposals/{{ proposal.id }}/accept" style="display: inline;">
+            <button type="submit" class="btn btn-success btn-sm">✅ Accept as Worker</button>
+          </form>
+          <form method="POST" action="/chats/proposals/{{ proposal.id }}/reject" style="display: inline;">
+            <button type="submit" class="btn btn-danger btn-sm">❌ Reject</button>
+          </form>
+          {% endif %}
+        {% elif proposal.status.value == 'accepted' and proposal.booking_id %}
+        <a href="/bookings/{{ proposal.booking_id }}" class="btn btn-primary btn-sm">
+          View Booking →
+        </a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted" style="margin-top: 1rem;">No proposals yet. Create one to agree on price and terms!</p>
+    {% endif %}
+  </div>
+
+  <!-- Review Section (After Job Completion) -->
+  {% if completed_booking %}
+  <div class="review-section">
+    <h3>⭐ Job Review</h3>
+    
+    {% if can_review %}
+    <div class="review-prompt">
+      <p><strong>The job has been completed!</strong> Share your experience with {{ other_user.full_name }}.</p>
+      
+      <form method="POST" action="/chats/{{ chat.id }}/review" class="review-form" autocomplete="off" onsubmit="return validateReview()">
+        <input type="hidden" name="booking_id" value="{{ completed_booking.id }}" />
+        
+        <div class="form-group">
+          <label>Rating *</label>
+          <div class="star-rating-input">
+            <input type="radio" name="rating" value="5" id="review_star5" required />
+            <label for="review_star5" title="5 stars">⭐⭐⭐⭐⭐</label>
+            
+            <input type="radio" name="rating" value="4" id="review_star4" />
+            <label for="review_star4" title="4 stars">⭐⭐⭐⭐</label>
+            
+            <input type="radio" name="rating" value="3" id="review_star3" />
+            <label for="review_star3" title="3 stars">⭐⭐⭐</label>
+            
+            <input type="radio" name="rating" value="2" id="review_star2" />
+            <label for="review_star2" title="2 stars">⭐⭐</label>
+            
+            <input type="radio" name="rating" value="1" id="review_star1" />
+            <label for="review_star1" title="1 star">⭐</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="review_comment">Comment (optional)</label>
+          <textarea name="review_comment" id="review_comment" rows="3" placeholder="Share details about your experience..." autocomplete="off"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" name="review_anonymous" id="review_anonymous" value="true" />
+            Post anonymously (hide my name)
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Submit Review</button>
+        </div>
+      </form>
+    </div>
+    {% elif existing_review %}
+    <div class="review-submitted">
+      <p>✅ You've already reviewed this job. Thank you for your feedback!</p>
+      <div class="existing-review">
+        <div class="review-rating">
+          {% for i in range(existing_review.rating) %}⭐{% endfor %}
+        </div>
+        {% if existing_review.comment %}
+        <p>"{{ existing_review.comment }}"</p>
+        {% endif %}
+        <p class="text-muted">
+          Posted {{ existing_review.created_at.strftime('%d %b %Y') }} · 
+          {% if existing_review.is_anonymous %}Anonymous{% else %}{{ current_user.full_name }}{% endif %}
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+// WebSocket Connection
+const chatId = {{ chat.id }};
+const userId = {{ current_user.id }};
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const ws = new WebSocket(`${protocol}//${window.location.host}/chats/ws/${chatId}/${userId}`);
+
+ws.onopen = function() {
+  console.log('WebSocket connected');
+};
+
+ws.onmessage = function(event) {
+  const data = JSON.parse(event.data);
+  if (data.type === 'message') {
+    appendMessage(data);
+  } else if (data.type === 'proposal_created') {
+    // Reload page to show new proposal
+    window.location.reload();
+  }
+};
+
+ws.onerror = function(error) {
+  console.error('WebSocket error:', error);
+};
+
+ws.onclose = function() {
+  console.log('WebSocket disconnected');
+};
+
+function appendMessage(data) {
+  const container = document.getElementById('messages-container');
+  const msgDiv = document.createElement('div');
+  const isSent = data.sender_id === userId;
+  
+  msgDiv.className = isSent ? 'message message-sent' : 'message message-received';
+  msgDiv.innerHTML = `
+    <div class="message-content">
+      <strong>${data.sender_name}:</strong>
+      <p>${data.content}</p>
+    </div>
+    <span class="message-timestamp">${new Date(data.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+  `;
+  
+  container.appendChild(msgDiv);
+  msgDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function sendMessage() {
+  const input = document.getElementById('message-input');
+  const content = input.value.trim();
+  
+  if (content && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'message',
+      content: content
+    }));
+    input.value = '';
+  }
+}
+
+// Send on Enter key
+document.getElementById('message-input').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Scroll to bottom on load
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.getElementById('messages-container');
+  container.scrollTop = container.scrollHeight;
+});
+
+// Toggle proposal form
+function toggleProposalForm() {
+  const form = document.getElementById('proposal-form');
+  const btn = document.getElementById('toggle-proposal-btn');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    btn.textContent = '− Hide Form';
+  } else {
+    form.style.display = 'none';
+    btn.textContent = '+ Create Booking Proposal';
+  }
+}
+
+// Validate review form
+function validateReview() {
+  const rating = document.querySelector('input[name="rating"]:checked');
+  if (!rating) {
+    alert('Please select a rating before submitting your review.');
+    return false;
+  }
+  return true;
+}
+</script>
+{% endblock %}

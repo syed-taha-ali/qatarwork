@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Create Account — QatarWork{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Create Account</h1>
+      <p>Join Qatar's trusted labor marketplace</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/auth/register" class="auth-form" enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" name="full_name" placeholder="John Smith" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="johnsmith@gmail.com" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="At least 6 characters" required minlength="6" />
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" placeholder="+974 5000 1234" required />
+        <small class="text-muted">We'll send a verification code via WhatsApp</small>
+      </div>
+
+      <div class="form-group">
+        <label for="profile_picture">Profile Picture <span class="text-muted">(optional)</span></label>
+        <input type="file" id="profile_picture" name="profile_picture" accept="image/*" />
+        <small class="text-muted">JPG, PNG, or GIF - Max 5MB</small>
+      </div>
+
+      <div class="form-group">
+        <label>I am a…</label>
+        <div class="role-selector">
+          <label class="role-option">
+            <input type="radio" name="role" value="client" required />
+            <div class="role-card">
+              <span class="role-icon">👤</span>
+              <strong>Client</strong>
+              <span>I need to hire workers</span>
+            </div>
+          </label>
+          <label class="role-option">
+            <input type="radio" name="role" value="worker" required />
+            <div class="role-card">
+              <span class="role-icon">🔧</span>
+              <strong>Worker</strong>
+              <span>I offer services</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+    </form>
+
+    <p class="auth-footer">Already have an account? <a href="/auth/login">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

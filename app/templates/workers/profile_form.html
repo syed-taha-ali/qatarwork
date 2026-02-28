@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{% if action == 'create' %}Create{% else %}Edit{% endif %} Worker Profile — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+  <div class="form-card">
+    <h1>{% if action == 'create' %}Complete Your Worker Profile{% else %}Edit Your Profile{% endif %}</h1>
+    <p class="text-muted">{% if action == 'create' %}Add your skills and rate to start getting hired.{% else %}Keep your profile up to date.{% endif %}</p>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/workers/profile/{{ action }}" class="main-form">
+
+      <div class="form-group">
+        <label for="skill_category">Your Skill / Occupation</label>
+        <select id="skill_category" name="skill_category" required onchange="toggleOtherField(this)">
+          <optgroup label="Skilled Trades">
+            {% for skill in ['general_handyman', 'locksmith', 'electrician', 'plumber', 'carpenter', 'hvac_tech', 'painter', 'gardener', 'chef', 'exterminator'] %}
+            <option value="{{ skill }}" {% if profile and profile.skill_category.value == skill %}selected{% endif %}>
+              {{ skill_labels.get(skill, skill | title) }}
+            </option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Care & Personal Support">
+            {% for skill in ['maid', 'nanny', 'nurse', 'babysitter', 'pet_sitter'] %}
+            <option value="{{ skill }}" {% if profile and profile.skill_category.value == skill %}selected{% endif %}>
+              {{ skill_labels.get(skill, skill | title) }}
+            </option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Other">
+            <option value="other" {% if profile and profile.skill_category.value == 'other' %}selected{% endif %}>Other</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="form-group" id="other_skill_field" style="display: {% if profile and profile.skill_category.value == 'other' %}block{% else %}none{% endif %};">
+        <label for="other_skill_description">Please specify your skill</label>
+        <input type="text" id="other_skill_description" name="other_skill_description" 
+               placeholder="e.g. Tile installer, Window cleaner, etc."
+               value="{{ profile.bio[:50] if profile and profile.skill_category.value == 'other' else '' }}" />
+        <small class="text-muted">This will be shown in your profile</small>
+      </div>
+
+      <script>
+        function toggleOtherField(select) {
+          const otherField = document.getElementById('other_skill_field');
+          if (select.value === 'other') {
+            otherField.style.display = 'block';
+            document.getElementById('other_skill_description').required = true;
+          } else {
+            otherField.style.display = 'none';
+            document.getElementById('other_skill_description').required = false;
+          }
+        }
+      </script>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="hourly_rate">Hourly Rate (QAR)</label>
+          <input type="number" id="hourly_rate" name="hourly_rate"
+                 value="{{ profile.hourly_rate if profile else '' }}"
+                 min="1" step="0.5" placeholder="e.g. 50" required />
+        </div>
+        <div class="form-group">
+          <label for="years_experience">Years of Experience</label>
+          <input type="number" id="years_experience" name="years_experience"
+                 value="{{ profile.years_experience if profile else 0 }}"
+                 min="0" max="50" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="location">Your Location / Area</label>
+        <input type="text" id="location" name="location"
+               value="{{ profile.location if profile else '' }}"
+               placeholder="e.g. Al Rayyan, Qatar" />
+      </div>
+
+      <div class="form-group">
+        <label for="bio">About You</label>
+        <textarea id="bio" name="bio" rows="4"
+                  placeholder="Describe your skills, experience, and what you offer…">{{ profile.bio if profile else '' }}</textarea>
+      </div>
+
+      {% if action == 'edit' %}
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="is_available" value="on"
+                 {% if profile and profile.is_available %}checked{% endif %} />
+          <span>I am currently available for work</span>
+        </label>
+      </div>
+      {% endif %}
+
+      <div class="form-actions">
+        <a href="/dashboard" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          {% if action == 'create' %}Create Profile{% else %}Save Changes{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

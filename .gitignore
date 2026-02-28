@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables (CRITICAL - Never commit)
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# Database (CRITICAL - Never commit production DB)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Logs (CRITICAL - May contain sensitive data)
+logs/
+*.log
+
+# Uploaded Files (CRITICAL - User data)
+app/static/uploads/
+app/private/documents/
+
+# Test Coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+
+# Documentation builds
+docs/_build/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# Sensitive configuration
+config/production.py
+secrets.yaml
+credentials.json
+
+# Backup files
+*.backup
+*.old

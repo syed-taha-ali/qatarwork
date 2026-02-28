@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  {% set error = request.query_params.get('error') %}
+  {% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+
+  <div class="job-detail-layout">
+
+    <!-- Job Info -->
+    <div class="job-main">
+      <div class="job-detail-card">
+        <div class="job-detail-header">
+          <div>
+            <span class="skill-badge skill-badge-lg">
+              {{ skill_labels.get(job.skill_required.value, job.skill_required.value | title) }}
+            </span>
+            <h1>{{ job.title }}</h1>
+          </div>
+          {% if job.is_open %}
+          <span class="badge badge-green">Open</span>
+          {% else %}
+          <span class="badge badge-gray">Booked</span>
+          {% endif %}
+        </div>
+
+        <div class="job-spec-row">
+          <div class="job-spec">
+            <span class="spec-label">Duration</span>
+            <span class="spec-value">{{ job.duration_hours }} hours</span>
+          </div>
+          <div class="job-spec">
+            <span class="spec-label">Budget</span>
+            <span class="spec-value">QAR {{ "%.0f"|format(job.budget) }}</span>
+          </div>
+          <div class="job-spec">
+            <span class="spec-label">Location</span>
+            <span class="spec-value">{{ job.location }}</span>
+          </div>
+          <div class="job-spec">
+            <span class="spec-label">Posted By</span>
+            <span class="spec-value">{{ job.client.full_name }}</span>
+          </div>
+        </div>
+
+        <div class="job-description">
+          <h3>Job Description</h3>
+          <p>{{ job.description }}</p>
+        </div>
+
+        <!-- Owner Actions -->
+        {% if current_user and current_user.id == job.client_id and job.is_open %}
+        <div class="job-owner-actions">
+          <form method="POST" action="/jobs/{{ job.id }}/delete"
+                onsubmit="return confirm('Delete this job? This cannot be undone.')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete Job</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Existing Booking -->
+      {% if job.booking %}
+      <div class="booking-info-card">
+        <h3>Booking Status</h3>
+        <p>This job has been booked with <strong>{{ job.booking.worker.full_name }}</strong>.</p>
+        {% if current_user and current_user.id in [job.client_id, job.booking.worker_id] %}
+        <a href="/bookings/{{ job.booking.id }}" class="btn btn-outline">View Booking</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Contact Client -->
+    {% if job.is_open and current_user and current_user.role.value == 'worker' %}
+    <div class="job-sidebar">
+      <div class="workers-sidebar-card">
+        <h3>Interested in This Job?</h3>
+        <p class="text-muted">Contact the client to discuss details and negotiate terms.</p>
+        <form method="POST" action="/chats/start">
+          <input type="hidden" name="receiver_id" value="{{ job.client_id }}">
+          <input type="hidden" name="job_id" value="{{ job.id }}">
+          <input type="hidden" name="initial_message" value="Hi! I'm interested in your job: {{ job.title }}">
+          <button type="submit" class="btn btn-primary btn-full">💬 Contact About This Job</button>
+        </form>
+      </div>
+    </div>
+    {% elif job.is_open and not current_user %}
+    <div class="job-sidebar">
+      <div class="workers-sidebar-card">
+        <h3>Want to Apply?</h3>
+        <p class="text-muted">Log in as a worker to apply for this job.</p>
+        <a href="/auth/login" class="btn btn-primary btn-full">Log In</a>
+        <a href="/auth/register" class="btn btn-outline btn-full" style="margin-top:0.5rem;">Sign Up</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}My Chats — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <div class="page-header">
+    <h1>💬 My Chats</h1>
+    <p class="text-muted">Conversations with clients and workers</p>
+  </div>
+
+  {% if chats %}
+  <div class="chats-list">
+    {% for chat in chats %}
+    <a href="/chats/{{ chat.id }}" class="chat-list-item">
+      <div class="chat-list-left">
+        <div class="chat-avatar">{{ chat.other_user_name[0] | upper }}</div>
+        <div class="chat-info">
+          <h3>{{ chat.other_user_name }}</h3>
+          <p class="chat-preview">{{ chat.last_message if chat.last_message else 'No messages yet' }}</p>
+        </div>
+      </div>
+      <div class="chat-list-right">
+        <span class="chat-time">{{ chat.last_message_time.strftime('%d %b, %H:%M') if chat.last_message_time else '' }}</span>
+        {% if chat.unread_count > 0 %}
+        <span class="chat-unread-badge">{{ chat.unread_count }}</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-page">
+    <p>No chats yet. Start a conversation with a worker or client!</p>
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+      <a href="/workers/" class="btn btn-primary">Browse Workers</a>
+      <a href="/jobs/" class="btn btn-outline">Browse Jobs</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

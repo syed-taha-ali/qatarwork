@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.user.full_name }} — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <div class="worker-profile-page">
+
+    <!-- Sidebar -->
+    <div class="profile-sidebar">
+      <div class="profile-card">
+        {% if profile.user.profile_picture %}
+        <img src="{{ profile.user.profile_picture }}" alt="Profile" class="profile-avatar-xl-img" />
+        {% else %}
+        <div class="profile-avatar-xl">{{ profile.user.full_name[0] | upper }}</div>
+        {% endif %}
+        <h2>
+          {{ profile.user.full_name }}
+          {% if profile.user.verification_status == 'approved' %}
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background: #f0fdf4; color: #166534; border-radius: 6px; font-size: 0.75rem; font-weight: 600; vertical-align: middle; margin-left: 0.5rem;">
+            ✓ Verified
+          </span>
+          {% endif %}
+        </h2>
+        <span class="skill-badge skill-badge-lg">
+          {{ skill_labels.get(profile.skill_category.value, profile.skill_category.value | title) }}
+        </span>
+        <div class="profile-rate">
+          <span class="rate-display">QAR {{ "%.0f"|format(profile.hourly_rate) }}</span>
+          <span class="text-muted">per hour</span>
+        </div>
+        {% if profile.is_available %}
+        <div class="availability-pill available">✅ Available Now</div>
+        {% else %}
+        <div class="availability-pill unavailable">❌ Currently Unavailable</div>
+        {% endif %}
+
+        {% if current_user and current_user.role.value == 'client' and profile.is_available %}
+        <div class="hire-section">
+          <p class="text-muted" style="font-size:0.85rem; margin-bottom:0.5rem;">
+            Start a conversation to discuss your needs and negotiate terms.
+          </p>
+          <form method="POST" action="/chats/start">
+            <input type="hidden" name="receiver_id" value="{{ profile.user_id }}">
+            <button type="submit" class="btn btn-primary btn-full">💬 Contact Worker</button>
+          </form>
+        </div>
+        {% elif not current_user %}
+        <a href="/auth/register" class="btn btn-primary btn-full">Sign Up to Contact</a>
+        {% endif %}
+      </div>
+
+      <div class="profile-stats-card">
+        <div class="pstat">
+          <span class="pstat-num">{{ profile.total_jobs_completed }}</span>
+          <span class="pstat-label">Jobs Completed</span>
+        </div>
+        <div class="pstat">
+          <span class="pstat-num">{{ profile.years_experience }}</span>
+          <span class="pstat-label">Years Experience</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="profile-main">
+      <div class="profile-section">
+        <h3>About</h3>
+        <p>{{ profile.bio or 'This worker has not added a bio yet.' }}</p>
+      </div>
+
+      <div class="profile-section">
+        <h3>Details</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">📍 Location</span>
+            <span>{{ profile.location or 'Qatar' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">🛠️ Skill</span>
+            <span>{{ skill_labels.get(profile.skill_category.value, profile.skill_category.value | title) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">💰 Rate</span>
+            <span>QAR {{ "%.0f"|format(profile.hourly_rate) }}/hour</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">📅 Member Since</span>
+            <span>{{ profile.created_at.strftime('%B %Y') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>How Payments Work</h3>
+        <div class="escrow-explainer">
+          <div class="escrow-step">
+            <span class="escrow-icon">🔐</span>
+            <div>
+              <strong>Escrow Protection</strong>
+              <p>Your payment is held securely until the job is complete.</p>
+            </div>
+          </div>
+          <div class="escrow-step">
+            <span class="escrow-icon">✅</span>
+            <div>
+              <strong>Release on Completion</strong>
+              <p>Mark the job done to release payment to the worker.</p>
+            </div>
+          </div>
+          <div class="escrow-step">
+            <span class="escrow-icon">💸</span>
+            <div>
+              <strong>10% Platform Fee</strong>
+              <p>A 10% fee is applied to both client and worker sides.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="profile-section">
+      <h2>⭐ Reviews & Ratings</h2>
+      
+      {% if avg_rating %}
+      <div class="rating-summary">
+        <div class="avg-rating-large">{{ avg_rating }}</div>
+        <div>
+          <div class="stars-display">
+            {% for i in range(5) %}
+              {% if i < avg_rating|int %}⭐{% else %}☆{% endif %}
+            {% endfor %}
+          </div>
+          <p class="text-muted">Based on {{ reviews|length }} review{{ 's' if reviews|length != 1 else '' }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if reviews %}
+      <div class="reviews-list">
+        {% for review in reviews %}
+        <div class="review-item">
+          <div class="review-header">
+            <div class="review-rating">
+              {% for i in range(review.rating) %}⭐{% endfor %}
+            </div>
+            <span class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+          
+          {% if review.comment %}
+          <p class="review-comment">{{ review.comment }}</p>
+          {% endif %}
+          
+          <p class="review-author">
+            — {% if review.is_anonymous %}Anonymous Client{% else %}{{ review.reviewer.full_name }}{% endif %}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted">No reviews yet. Be the first to hire and review this worker!</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

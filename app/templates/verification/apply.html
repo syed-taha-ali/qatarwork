@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Verification Application — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+  <div class="form-card">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h1>✅ Profile Verification</h1>
+      <p class="text-muted">Get your profile verified to build trust with {{ 'workers' if current_user.role.value == 'client' else 'clients' }}</p>
+    </div>
+
+    <!-- Application History / Current Status -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 1rem;">Application Status</h3>
+      
+      {% if current_user.verification_status == 'approved' %}
+      <!-- APPROVED STATUS (PERMANENT) -->
+      <div class="status-card" style="background: #f0fdf4; border: 2px solid #86efac; color: #166534; padding: 1.5rem; border-radius: 8px;">
+        <h2 style="margin: 0; color: #166534;">✓ Verification Approved</h2>
+        <p style="margin: 0.5rem 0 0;">Your profile has been verified!</p>
+        {% if current_user.verification_reviewed_at %}
+        <small style="display: block; margin-top: 0.5rem; opacity: 0.8;">
+          Approved on: {{ current_user.verification_reviewed_at.strftime('%d %b %Y, %H:%M') }}
+        </small>
+        {% endif %}
+        <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 6px;">
+          <strong>🔒 Security Notice:</strong>
+          <p style="margin: 0.5rem 0 0; font-size: 0.9rem;">Your uploaded documents (QID, credentials) have been securely deleted after verification. Your information is safe and no longer stored on our servers.</p>
+        </div>
+      </div>
+      
+      {% elif current_user.verification_status == 'pending' %}
+      <!-- PENDING STATUS (PERMANENT) -->
+      <div class="status-card" style="background: #fffbeb; border: 2px solid #fbbf24; color: #92400e; padding: 1.5rem; border-radius: 8px;">
+        <h2 style="margin: 0; color: #92400e;">⏳ Application Under Review</h2>
+        <p style="margin: 0.5rem 0 0;">Your verification application is being reviewed by our admin team.</p>
+        {% if current_user.verification_applied_at %}
+        <small style="display: block; margin-top: 0.5rem; opacity: 0.8;">
+          Submitted on: {{ current_user.verification_applied_at.strftime('%d %b %Y, %H:%M') }}
+        </small>
+        {% endif %}
+        <p style="margin-top: 1rem; font-size: 0.9rem;">
+          📋 You will be notified once your application has been reviewed. This typically takes 24-48 hours.
+        </p>
+      </div>
+      
+      {% elif current_user.verification_status == 'rejected' %}
+      <!-- REJECTED STATUS (PERMANENT) -->
+      <div class="status-card" style="background: #fef2f2; border: 2px solid #fca5a5; color: #991b1b; padding: 1.5rem; border-radius: 8px;">
+        <h2 style="margin: 0; color: #991b1b;">✗ Application Rejected</h2>
+        <p style="margin: 0.5rem 0 0;">Your verification application was not approved.</p>
+        {% if current_user.verification_reviewed_at %}
+        <small style="display: block; margin-top: 0.5rem; opacity: 0.8;">
+          Reviewed on: {{ current_user.verification_reviewed_at.strftime('%d %b %Y, %H:%M') }}
+        </small>
+        {% endif %}
+        {% if current_user.verification_rejection_reason %}
+        <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 4px;">
+          <strong>Reason for Rejection:</strong>
+          <p style="margin: 0.5rem 0 0; white-space: pre-wrap;">{{ current_user.verification_rejection_reason }}</p>
+        </div>
+        {% endif %}
+        <p style="margin: 1rem 0 0; font-size: 0.9rem;">
+          📝 Please address the issues mentioned above and reapply using the form below.
+        </p>
+      </div>
+      
+      {% else %}
+      <!-- NOT APPLIED YET -->
+      <div class="status-card" style="background: #f9fafb; border: 2px solid #e5e7eb; color: #374151; padding: 1.5rem; border-radius: 8px; text-align: center;">
+        <h2 style="margin: 0; color: #374151;">📋 No Application Submitted</h2>
+        <p style="margin: 0.5rem 0 0;">You haven't applied for verification yet.</p>
+        <p style="margin: 0.5rem 0 0; font-size: 0.9rem;">Complete the requirements below to apply.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Complete Application History (All Attempts) -->
+    {% if current_user.verification_history|length > 0 %}
+    <div style="margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 1rem;">📜 Complete Application History</h3>
+      
+      <div style="background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead style="background: var(--surface-alt);">
+            <tr>
+              <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Date & Time</th>
+              <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Event</th>
+              <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Status</th>
+              <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in current_user.verification_history %}
+            <tr {% if entry.status == 'approved' %}style="background: #f0fdf4;"{% elif entry.status == 'rejected' %}style="background: #fef2f2;"{% endif %}>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                <strong>
+                  {% if entry.status == 'submitted' and entry.applied_at %}
+                    {{ entry.applied_at.strftime('%d %b %Y') }}
+                  {% elif entry.reviewed_at %}
+                    {{ entry.reviewed_at.strftime('%d %b %Y') }}
+                  {% else %}
+                    {{ entry.created_at.strftime('%d %b %Y') }}
+                  {% endif %}
+                </strong><br>
+                <small style="color: #666;">
+                  {% if entry.status == 'submitted' and entry.applied_at %}
+                    {{ entry.applied_at.strftime('%H:%M') }}
+                  {% elif entry.reviewed_at %}
+                    {{ entry.reviewed_at.strftime('%H:%M') }}
+                  {% else %}
+                    {{ entry.created_at.strftime('%H:%M') }}
+                  {% endif %}
+                </small>
+              </td>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                {% if entry.status == 'submitted' %}
+                <strong>Application Submitted</strong>
+                {% elif entry.status == 'approved' %}
+                <strong style="color: #166534;">✓ Approved by Admin</strong>
+                {% elif entry.status == 'rejected' %}
+                <strong style="color: #991b1b;">✗ Rejected by Admin</strong>
+                {% endif %}
+              </td>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                {% if entry.status == 'submitted' %}
+                <span style="padding: 0.25rem 0.75rem; background: #fef9c3; color: #92400e; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                  Submitted
+                </span>
+                {% elif entry.status == 'approved' %}
+                <span style="padding: 0.25rem 0.75rem; background: #dcfce7; color: #166534; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                  Approved
+                </span>
+                {% elif entry.status == 'rejected' %}
+                <span style="padding: 0.25rem 0.75rem; background: #fee2e2; color: #991b1b; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                  Rejected
+                </span>
+                {% endif %}
+              </td>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem;">
+                {% if entry.status == 'submitted' %}
+                Documents uploaded for review
+                {% elif entry.status == 'approved' %}
+                Verification complete. Documents deleted.
+                {% elif entry.status == 'rejected' %}
+                {{ entry.rejection_reason or 'No reason provided' }}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <p style="margin-top: 1rem; font-size: 0.85rem; color: #6b7280;">
+        ℹ️ <strong>Complete History:</strong> This table shows all your verification attempts from newest to oldest, including all rejections and reapplications.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Success/Error Messages from Actions (these can be temporary) -->
+    {% if request.query_params.get('success') %}
+    <div class="alert" style="background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+      ✅ {{ request.query_params.get('success') }}
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get('error') %}
+    <div class="alert" style="background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+      ⚠️ {{ request.query_params.get('error') }}
+    </div>
+    {% endif %}
+
+    <!-- Requirements Checklist (only show if not approved) -->
+    {% if current_user.verification_status != 'approved' %}
+    <div style="margin: 2rem 0;">
+      <h3>📋 Verification Requirements</h3>
+      
+      <div class="requirements-list">
+        <!-- Profile Picture -->
+        <div class="requirement-item {% if current_user.profile_picture %}complete{% endif %}">
+          <span class="req-icon">{% if current_user.profile_picture %}✅{% else %}⭕{% endif %}</span>
+          <div>
+            <strong>Profile Picture</strong>
+            <p class="text-muted">Upload a clear profile photo</p>
+          </div>
+          {% if not current_user.profile_picture %}
+          <a href="/profile/edit" class="btn btn-sm btn-outline">Upload</a>
+          {% endif %}
+        </div>
+
+        <!-- QID Documents -->
+        <div class="requirement-item {% if documents.qid_front and documents.qid_back %}complete{% endif %}">
+          <span class="req-icon">{% if documents.qid_front and documents.qid_back %}✅{% else %}⭕{% endif %}</span>
+          <div>
+            <strong>Qatar ID (QID)</strong>
+            <p class="text-muted">Front and back of your QID</p>
+            {% if documents.qid_front or documents.qid_back %}
+            <small style="display: block; margin-top: 0.25rem;">
+              {% if documents.qid_front %}✓ Front uploaded{% endif %}
+              {% if documents.qid_back %}{% if documents.qid_front %} | {% endif %}✓ Back uploaded{% endif %}
+            </small>
+            {% endif %}
+          </div>
+          {% if not documents.qid_front or not documents.qid_back %}
+          <a href="/profile/edit#documents" class="btn btn-sm btn-outline">Upload</a>
+          {% endif %}
+        </div>
+
+        <!-- Worker-specific requirements -->
+        {% if current_user.role.value == 'worker' %}
+        <div class="requirement-item {% if current_user.worker_profile and current_user.worker_profile.bio %}complete{% endif %}">
+          <span class="req-icon">{% if current_user.worker_profile and current_user.worker_profile.bio %}✅{% else %}⭕{% endif %}</span>
+          <div>
+            <strong>Complete Profile</strong>
+            <p class="text-muted">Fill out bio, location, and experience</p>
+          </div>
+          {% if not current_user.worker_profile or not current_user.worker_profile.bio %}
+          <a href="{% if current_user.worker_profile %}/workers/profile/edit{% else %}/workers/profile/create{% endif %}" class="btn btn-sm btn-outline">Complete</a>
+          {% endif %}
+        </div>
+
+        <div class="requirement-item {% if documents.credentials|length > 0 %}complete{% endif %}">
+          <span class="req-icon">{% if documents.credentials|length > 0 %}✅{% else %}💡{% endif %}</span>
+          <div>
+            <strong>Credentials (Optional)</strong>
+            <p class="text-muted">Certificates, licenses, or qualifications</p>
+            {% if documents.credentials|length > 0 %}
+            <small style="display: block; margin-top: 0.25rem;">{{ documents.credentials|length }} document(s) uploaded</small>
+            {% endif %}
+          </div>
+          <a href="/profile/edit#documents" class="btn btn-sm btn-outline">{% if documents.credentials|length > 0 %}Manage{% else %}Upload{% endif %}</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Apply Button -->
+    {% set can_apply = current_user.profile_picture and documents.qid_front and documents.qid_back %}
+    {% if current_user.role.value == 'worker' %}
+      {% set can_apply = can_apply and current_user.worker_profile and current_user.worker_profile.bio %}
+    {% endif %}
+
+    {% if current_user.verification_status in ['unverified', 'rejected'] %}
+      {% if can_apply %}
+      <form method="POST" action="/verification/apply" style="text-align: center; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary btn-lg">
+          {% if current_user.verification_status == 'rejected' %}Reapply for Verification{% else %}Apply for Verification{% endif %}
+        </button>
+        <p class="text-muted" style="margin-top: 1rem; font-size: 0.9rem;">
+          Your application will be reviewed by our admin team within 24-48 hours.
+        </p>
+      </form>
+      {% else %}
+      <div style="text-align: center; margin-top: 2rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+        <p style="margin: 0; color: #6b7280;">
+          ⚠️ Please complete all required items above before applying for verification.
+        </p>
+      </div>
+      {% endif %}
+    {% endif %}
+    
+    {% endif %}
+    <!-- End of requirements section (only shown if not approved) -->
+
+  </div>
+</div>
+
+<style>
+.requirements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.requirement-item.complete {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+.req-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.requirement-item > div:nth-child(2) {
+  flex: 1;
+}
+.requirement-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+</style>
+{% endblock %}

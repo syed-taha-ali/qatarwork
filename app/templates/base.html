@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Qatar Skilled Labor Marketplace{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ─── NAVBAR ───────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="navbar-brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="6" fill="#8B1A1A"/>
+        <text x="5" y="21" font-size="16" fill="white">⚒</text>
+      </svg>
+      <span>QatarWork</span>
+    </a>
+
+    <div class="navbar-links">
+      <a href="/workers/">Browse Workers</a>
+      <a href="/jobs/">Browse Jobs</a>
+      {% if current_user %}
+        <a href="/chats/">Chats</a>
+      {% endif %}
+
+      {% if current_user %}
+        <a href="/dashboard" class="btn btn-outline">Dashboard</a>
+        {% if current_user.role.value == 'client' %}
+          <a href="/jobs/create" class="btn btn-outline">Post a Job</a>
+        {% elif current_user.role.value == 'worker' %}
+          <a href="/workers/profile/edit" class="btn btn-outline">My Profile</a>
+        {% endif %}
+        <div class="nav-user">
+          {% if current_user.profile_picture %}
+          <img src="{{ current_user.profile_picture }}" alt="Profile" class="nav-avatar-img" />
+          {% else %}
+          <span class="nav-avatar">{{ current_user.full_name[0] | upper }}</span>
+          {% endif %}
+          <div class="nav-dropdown">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/profile/edit">Edit Profile</a>
+            <a href="/bookings/">My Bookings</a>
+            <a href="/bookings/wallet/topup">Top-up Wallet</a>
+            <hr/>
+            <a href="/auth/logout" class="text-danger">Log out</a>
+          </div>
+        </div>
+      {% else %}
+        <a href="/auth/login" class="btn btn-outline">Log In</a>
+        <a href="/auth/register" class="btn btn-outline">Sign Up</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- ─── FLASH MESSAGES ───────────────────────────────────────────────────── -->
+{% if error %}
+<div class="alert alert-error container">{{ error }}</div>
+{% endif %}
+{% if success %}
+<div class="alert alert-success container">{{ success }}</div>
+{% endif %}
+
+<!-- ─── MAIN CONTENT ─────────────────────────────────────────────────────── -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ─── FOOTER ───────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>© 2025 QatarWork — Skilled Labor Marketplace</p>
+    <p class="text-muted">Connecting talented workers with clients across Qatar</p>
+  </div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Review {{ user.full_name }} — Admin{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+  <a href="/admin/verifications" style="display: inline-block; margin-bottom: 1rem; color: var(--maroon);">← Back to Applications</a>
+  
+  <div class="form-card">
+    <!-- User Header -->
+    <div style="display: flex; align-items: center; gap: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--border);">
+      {% if user.profile_picture %}
+      <img src="{{ user.profile_picture }}" alt="{{ user.full_name }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" />
+      {% else %}
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--maroon); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
+        {{ user.full_name[0] | upper }}
+      </div>
+      {% endif %}
+      <div>
+        <h1 style="margin: 0;">{{ user.full_name }}</h1>
+        <p style="margin: 0.5rem 0 0; color: #666;">{{ user.role.value|title }}</p>
+        <p style="margin: 0.25rem 0 0; font-size: 0.9rem; color: #999;">{{ user.email }} | {{ user.phone }}</p>
+      </div>
+    </div>
+
+    <!-- Profile Info -->
+    {% if user.role.value == 'worker' and user.worker_profile %}
+    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--surface-alt); border-radius: 8px;">
+      <h3>Worker Profile</h3>
+      <p><strong>Hourly Rate:</strong> QAR {{ user.worker_profile.hourly_rate }}/hr</p>
+      <p><strong>Location:</strong> {{ user.worker_profile.location or 'Not specified' }}</p>
+      <p><strong>Experience:</strong> {{ user.worker_profile.years_experience or 0 }} years</p>
+      {% if user.worker_profile.bio %}
+      <p><strong>Bio:</strong></p>
+      <p style="white-space: pre-wrap;">{{ user.worker_profile.bio }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Documents -->
+    <div style="margin-top: 1.5rem;">
+      <h3>📄 Uploaded Documents</h3>
+      
+      <!-- QID -->
+      <div style="margin-top: 1rem;">
+        <h4 style="color: var(--maroon);">Qatar ID</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <strong>Front:</strong>
+            {% if documents.qid_front %}
+            <a href="/admin/documents/{{ user.id }}/{{ documents.qid_front }}" target="_blank" class="btn btn-sm btn-outline" style="display: block; margin-top: 0.5rem;">
+              📄 View {{ documents.qid_front }}
+            </a>
+            {% else %}
+            <p class="text-muted">Not uploaded</p>
+            {% endif %}
+          </div>
+          <div>
+            <strong>Back:</strong>
+            {% if documents.qid_back %}
+            <a href="/admin/documents/{{ user.id }}/{{ documents.qid_back }}" target="_blank" class="btn btn-sm btn-outline" style="display: block; margin-top: 0.5rem;">
+              📄 View {{ documents.qid_back }}
+            </a>
+            {% else %}
+            <p class="text-muted">Not uploaded</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Credentials (Workers) -->
+      {% if documents.credentials|length > 0 %}
+      <div style="margin-top: 1.5rem;">
+        <h4 style="color: var(--maroon);">Credentials</h4>
+        <div style="display: grid; gap: 0.5rem;">
+          {% for cred in documents.credentials %}
+          <a href="/admin/documents/{{ user.id }}/{{ cred.filename }}" target="_blank" class="btn btn-sm btn-outline">
+            📄 Document {{ cred.index }}: {{ cred.filename }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border);">
+      <h3>Review Decision</h3>
+      
+      <!-- Approve -->
+      <form method="POST" action="/admin/verifications/{{ user.id }}/approve" style="margin-bottom: 1rem;">
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+          ✅ Approve Verification
+        </button>
+      </form>
+
+      <!-- Reject -->
+      <details style="margin-top: 1rem;">
+        <summary style="cursor: pointer; color: var(--maroon); font-weight: 600;">❌ Reject Application</summary>
+        <form method="POST" action="/admin/verifications/{{ user.id }}/reject" style="margin-top: 1rem; padding: 1rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;">
+          <div class="form-group">
+            <label for="reason">Rejection Reason *</label>
+            <textarea id="reason" name="reason" rows="4" required 
+                      placeholder="Explain why the application is rejected..."></textarea>
+            <small class="text-muted">This message will be shown to the user.</small>
+          </div>
+          <button type="submit" class="btn btn-danger">Reject Application</button>
+        </form>
+      </details>
+    </div>
+  </div>
+</div>
+{% endblock %}

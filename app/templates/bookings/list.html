@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}My Bookings — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <div class="page-header">
+    <h1>My Bookings</h1>
+    <p class="text-muted">{% if current_user.role.value == 'client' %}Jobs you've booked workers for{% else %}Jobs clients have booked you for{% endif %}</p>
+  </div>
+
+  {% if bookings %}
+  <div class="bookings-list">
+    {% for b in bookings %}
+    <a href="/bookings/{{ b.id }}" class="booking-row">
+      <div class="booking-row-left">
+        <div class="booking-id">#{{ b.id }}</div>
+        <div class="booking-details">
+          <h3>{{ b.job.title }}</h3>
+          <p class="text-muted">
+            {% if current_user.role.value == 'client' %}
+              Worker: <strong>{{ b.worker.full_name }}</strong>
+            {% else %}
+              Client: <strong>{{ b.client.full_name }}</strong>
+            {% endif %}
+            · {{ b.duration_hours }}h · Created {{ b.created_at.strftime('%d %b %Y') }}
+          </p>
+        </div>
+      </div>
+      <div class="booking-row-right">
+        <div class="booking-amount">
+          {% if current_user.role.value == 'client' %}
+            <span class="amount-label">You paid</span>
+            <span class="amount-value">QAR {{ "%.2f"|format(b.client_total) }}</span>
+          {% else %}
+            <span class="amount-label">Your payout</span>
+            <span class="amount-value">QAR {{ "%.2f"|format(b.worker_payout) }}</span>
+          {% endif %}
+        </div>
+        <span class="status-badge status-{{ b.status.value }}">{{ b.status.value | title }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-page">
+    <p>You don't have any bookings yet.</p>
+    {% if current_user.role.value == 'client' %}
+    <a href="/workers/" class="btn btn-primary">Browse Workers</a>
+    {% else %}
+    <a href="/workers/profile/{% if profile %}edit{% else %}create{% endif %}" class="btn btn-primary">
+      {% if not current_user.worker_profile %}Create Profile{% else %}Edit Profile{% endif %}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

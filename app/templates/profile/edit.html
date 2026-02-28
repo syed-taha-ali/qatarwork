@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+  <div class="form-card">
+    <h1>Edit Profile</h1>
+    <p class="text-muted">Update your account information</p>
+
+    <!-- Success Message -->
+    {% if request.query_params.get('success') %}
+    <div class="alert" style="background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+      ✅ {{ request.query_params.get('success') }}
+    </div>
+    {% endif %}
+
+    <!-- Error Message -->
+    {% if error or request.query_params.get('error') %}
+    <div class="alert" style="background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+      ⚠️ {{ error or request.query_params.get('error') }}
+    </div>
+    {% endif %}
+
+    <!-- Basic Profile Information -->
+    <form method="POST" action="/profile/edit" class="main-form" enctype="multipart/form-data">
+      <h3>Basic Information</h3>
+      
+      <div class="form-group">
+        <label>Current Profile Picture</label>
+        {% if current_user.profile_picture %}
+        <img src="{{ current_user.profile_picture }}" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />
+        {% else %}
+        <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--maroon); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
+          {{ current_user.full_name[0] | upper }}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="profile_picture">Change Profile Picture</label>
+        <input type="file" id="profile_picture" name="profile_picture" accept="image/*" />
+        <small class="text-muted">JPG, PNG, or GIF - Max 5MB</small>
+      </div>
+      
+      <div class="form-group">
+        <label for="full_name">Full Name *</label>
+        <input type="text" id="full_name" name="full_name" 
+               value="{{ current_user.full_name }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" 
+               value="{{ current_user.email }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" 
+               value="{{ current_user.phone or '' }}" placeholder="+974 XXXX XXXX" />
+      </div>
+
+      <div class="form-actions">
+        <a href="/dashboard" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+
+    <!-- Worker-Specific Profile -->
+    {% if current_user.role.value == 'worker' and current_user.worker_profile %}
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);" />
+    
+    <form method="POST" action="/profile/worker/edit" class="main-form">
+      <h3>Worker Profile</h3>
+
+      <div class="form-group">
+        <label for="hourly_rate">Hourly Rate (QAR) *</label>
+        <input type="number" id="hourly_rate" name="hourly_rate" step="0.01" min="1"
+               value="{{ current_user.worker_profile.hourly_rate }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="bio">Bio / Description</label>
+        <textarea id="bio" name="bio" rows="4" 
+                  placeholder="Tell clients about your skills and experience...">{{ current_user.worker_profile.bio or '' }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="location">Location</label>
+          <input type="text" id="location" name="location" 
+                 value="{{ current_user.worker_profile.location or '' }}" placeholder="e.g., Doha, Al Wakra" />
+        </div>
+
+        <div class="form-group">
+          <label for="years_experience">Years of Experience</label>
+          <input type="number" id="years_experience" name="years_experience" min="0"
+                 value="{{ current_user.worker_profile.years_experience }}" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="is_available" value="true" 
+                 {% if current_user.worker_profile.is_available %}checked{% endif %} />
+          Available for new jobs
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <a href="/workers/{{ current_user.id }}" class="btn btn-outline">View Public Profile</a>
+        <button type="submit" class="btn btn-primary">Save Worker Profile</button>
+      </div>
+    </form>
+    {% endif %}
+
+    <!-- Password Change Section -->
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);" />
+    
+    <div style="background: var(--surface-alt); padding: 1rem; border-radius: 8px;">
+      <h3 style="margin: 0 0 0.5rem 0;">Password</h3>
+      <p class="text-muted" style="margin: 0 0 1rem 0;">Want to change your password?</p>
+      <a href="/auth/forgot-password" class="btn btn-outline btn-sm">Change Password</a>
+    </div>
+
+    <!-- Document Upload Section -->
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);" />
+    
+    <div class="document-section">
+      <h3>🔒 Verification Documents</h3>
+      <p class="text-muted" style="margin-bottom: 1.5rem;">
+        <strong>Private & Secure:</strong> These documents are stored securely and are not publicly accessible.
+        They are used for verification purposes only.
+      </p>
+
+      <!-- QID Upload (All Users) -->
+      <form method="POST" action="/profile/documents/qid" enctype="multipart/form-data" class="document-form">
+        <h4 style="color: var(--maroon); margin-bottom: 1rem;">📇 Qatar ID (QID)</h4>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="qid_front">QID Front *</label>
+            <input type="file" id="qid_front" name="qid_front" accept=".jpg,.jpeg,.png,.pdf" />
+            <small class="text-muted">JPG, PNG, or PDF - Max 10MB</small>
+            {% if documents.qid_front %}
+            <div style="margin-top: 0.5rem; padding: 0.5rem; background: #d4edda; border-radius: 4px; font-size: 0.85rem;">
+              ✅ Uploaded: {{ documents.qid_front }}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="qid_back">QID Back *</label>
+            <input type="file" id="qid_back" name="qid_back" accept=".jpg,.jpeg,.png,.pdf" />
+            <small class="text-muted">JPG, PNG, or PDF - Max 10MB</small>
+            {% if documents.qid_back %}
+            <div style="margin-top: 0.5rem; padding: 0.5rem; background: #d4edda; border-radius: 4px; font-size: 0.85rem;">
+              ✅ Uploaded: {{ documents.qid_back }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">Upload QID</button>
+      </form>
+
+      <!-- Credentials Upload (Workers Only) -->
+      {% if current_user.role.value == 'worker' %}
+      <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);" />
+      
+      <form method="POST" action="/profile/documents/credentials" enctype="multipart/form-data" class="document-form">
+        <h4 style="color: var(--maroon); margin-bottom: 1rem;">📄 Professional Credentials (Optional)</h4>
+        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">
+          Upload certificates, licenses, or other credentials (up to 5 documents)
+        </p>
+
+        <div class="credentials-grid">
+          {% for i in range(1, 6) %}
+          <div class="form-group">
+            <label for="credential_{{ i }}">Document {{ i }}</label>
+            <input type="file" id="credential_{{ i }}" name="credential_{{ i }}" accept=".jpg,.jpeg,.png,.pdf" />
+            {% set cred = documents.credentials | selectattr('index', 'equalto', i) | first %}
+            {% if cred %}
+            <div style="margin-top: 0.5rem; padding: 0.5rem; background: #d4edda; border-radius: 4px; font-size: 0.85rem;">
+              ✅ {{ cred.filename }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">Upload Credentials</button>
+      </form>
+      {% endif %}
+
+      <div style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+        <strong>⚠️ Important:</strong> These documents are temporarily stored for verification purposes.
+        All files will be deleted after verification.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.document-section {
+  margin-top: 2rem;
+}
+.document-form {
+  background: white;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+.credentials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Top Up Wallet — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+  <div class="form-card">
+    <h1>Top Up Wallet</h1>
+    <p class="text-muted">Add funds to your wallet to book workers. This is a simulation — no real payment required.</p>
+
+    <!-- Error Message -->
+    {% if request.query_params.get('error') %}
+    <div class="alert" style="background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+      <strong>⚠️ Insufficient Funds</strong><br/>
+      {{ request.query_params.get('error') }}
+    </div>
+    {% endif %}
+
+    <div class="wallet-current">
+      <span class="wallet-label">Current Balance</span>
+      <span class="wallet-amount">QAR {{ "%.2f"|format(current_user.wallet_balance) }}</span>
+    </div>
+
+    <form method="POST" action="/bookings/wallet/topup" class="main-form">
+      {% if request.query_params.get('chat_id') %}
+      <input type="hidden" name="chat_id" value="{{ request.query_params.get('chat_id') }}" />
+      {% endif %}
+      {% if request.query_params.get('proposal_id') %}
+      <input type="hidden" name="proposal_id" value="{{ request.query_params.get('proposal_id') }}" />
+      {% endif %}
+      
+      <div class="form-group">
+        <label for="amount">Amount to Add (QAR)</label>
+        <input type="number" id="amount" name="amount"
+               min="1" step="1" placeholder="e.g. 500" required autofocus />
+      </div>
+
+      <!-- Quick amounts -->
+      <div class="quick-amounts">
+        <button type="button" onclick="document.getElementById('amount').value=100" class="btn btn-sm btn-outline">QAR 100</button>
+        <button type="button" onclick="document.getElementById('amount').value=500" class="btn btn-sm btn-outline">QAR 500</button>
+        <button type="button" onclick="document.getElementById('amount').value=1000" class="btn btn-sm btn-outline">QAR 1,000</button>
+        <button type="button" onclick="document.getElementById('amount').value=5000" class="btn btn-sm btn-outline">QAR 5,000</button>
+      </div>
+
+      <div class="form-actions">
+        <a href="/dashboard" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">Add Funds</button>
+      </div>
+    </form>
+
+    <div class="demo-hint">
+      <strong>💡 Demo Note:</strong> This simulates a payment wallet. In production, this would integrate with Stripe or a local payment gateway.
+    </div>
+  </div>
+</div>
+{% endblock %}

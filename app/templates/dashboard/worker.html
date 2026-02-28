@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}Worker Dashboard — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container dashboard">
+
+  <div class="dashboard-header">
+    <div>
+      <h1>Welcome, {{ current_user.full_name }}! 👋</h1>
+      <p class="text-muted">Manage your work profile and bookings</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      {% if current_user.verification_status == 'approved' %}
+        <span style="padding: 0.5rem 1rem; background: #f0fdf4; color: #166534; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+          ✓ Verified
+        </span>
+      {% elif current_user.verification_status == 'pending' %}
+        <a href="/verification/apply" class="btn btn-outline" style="background: #fffbeb; border-color: #fbbf24; color: #92400e;">
+          ⏳ Under Review
+        </a>
+      {% elif current_user.verification_status == 'rejected' %}
+        <a href="/verification/apply" class="btn btn-outline" style="background: #fef2f2; border-color: #fca5a5; color: #991b1b;">
+          ✗ Rejected - Reapply
+        </a>
+      {% else %}
+        <a href="/verification/apply" class="btn btn-primary">
+          Apply for Verification
+        </a>
+      {% endif %}
+      {% if profile %}
+        <a href="/workers/profile/edit" class="btn btn-outline">Edit Profile</a>
+      {% else %}
+        <a href="/workers/profile/create" class="btn btn-outline">Create Profile</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Profile Setup Banner -->
+  {% if not profile %}
+  <div class="alert alert-warning">
+    <strong>Complete your profile</strong> to start receiving job bookings.
+    <a href="/workers/profile/create" class="btn btn-sm btn-primary" style="margin-left:1rem;">Set Up Profile</a>
+  </div>
+  {% endif %}
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="stat-value">QAR {{ "%.2f"|format(current_user.wallet_balance) }}</span>
+      <span class="stat-label">Wallet Balance</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-value">QAR {{ "%.2f"|format(total_earned) }}</span>
+      <span class="stat-label">Total Earned</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-value">{{ active_bookings }}</span>
+      <span class="stat-label">Active Bookings</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-value">{{ profile.total_jobs_completed if profile else 0 }}</span>
+      <span class="stat-label">Jobs Completed</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-value">{% if avg_rating %}{{ avg_rating }} ⭐{% else %}—{% endif %}</span>
+      <span class="stat-label">Average Rating</span>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div style="display: flex; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap;">
+    {% if current_user.verification_status in ['pending', 'approved', 'rejected'] %}
+    <a href="/verification/apply" class="btn btn-outline" style="flex: 1; min-width: 200px;">
+      📋 My Verification Application
+    </a>
+    {% endif %}
+    <a href="/profile/edit" class="btn btn-outline" style="flex: 1; min-width: 200px;">
+      ⚙️ Account Settings
+    </a>
+  </div>
+
+  <div class="dashboard-grid">
+
+    <!-- Profile Summary -->
+    {% if profile %}
+    <div class="dash-panel">
+      <div class="panel-header">
+        <h2>My Profile</h2>
+        <a href="/profile/edit" class="btn btn-sm btn-outline">Edit Profile</a>
+      </div>
+      <div class="profile-summary">
+        <div class="profile-avatar-lg">{{ current_user.full_name[0] | upper }}</div>
+        <div>
+          <h3>{{ current_user.full_name }}</h3>
+          <span class="skill-badge">{{ profile.skill_category.value | title }}</span>
+          <p class="text-muted">QAR {{ "%.0f"|format(profile.hourly_rate) }}/hour</p>
+          <p>{{ profile.bio or 'No bio added yet.' }}</p>
+          <div class="availability-toggle">
+            Status:
+            {% if profile.is_available %}
+            <span class="badge badge-green">Available</span>
+            {% else %}
+            <span class="badge badge-gray">Unavailable</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending Proposals -->
+    <div class="dash-panel">
+      <div class="panel-header">
+        <h2>⏳ Pending Proposals</h2>
+      </div>
+      {% if pending_proposals %}
+        {% for proposal in pending_proposals %}
+        <div class="proposal-dash-item">
+          <div class="list-item-main">
+            <a href="/chats/{{ proposal.chat_id }}" class="list-item-title">{{ proposal.job.title }}</a>
+            <span class="text-muted">
+              Client: {{ proposal.client.full_name }} · 
+              QAR {{ "%.0f"|format(proposal.agreed_rate) }}/hr × {{ proposal.duration_hours }}h = 
+              QAR {{ "%.2f"|format(proposal.total_amount) }}
+            </span>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.85rem;">
+              <span>Client: {% if proposal.client_accepted %}<span style="color: #16a34a;">✅ Accepted</span>{% else %}<span style="color: #d97706;">⏳ Pending</span>{% endif %}</span>
+              <span>You: {% if proposal.worker_accepted %}<span style="color: #16a34a;">✅ Accepted</span>{% else %}<span style="color: #d97706;">⏳ Pending</span>{% endif %}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+            {% if not proposal.worker_accepted %}
+            <form method="POST" action="/chats/proposals/{{ proposal.id }}/accept">
+              <button type="submit" class="btn btn-success btn-sm" style="width: 100%;">✅ Accept</button>
+            </form>
+            <form method="POST" action="/chats/proposals/{{ proposal.id }}/reject">
+              <button type="submit" class="btn btn-danger btn-sm" style="width: 100%;">❌ Reject</button>
+            </form>
+            {% else %}
+            <a href="/chats/{{ proposal.chat_id }}" class="btn btn-outline btn-sm">View Chat →</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <p>No pending proposals.</p>
+          <a href="/jobs/" class="btn btn-outline">Browse Jobs</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="dash-panel">
+      <div class="panel-header">
+        <h2>My Bookings</h2>
+        <a href="/bookings/" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      {% if my_bookings %}
+        {% for b in my_bookings %}
+        <div class="list-item">
+          <div class="list-item-main">
+            <a href="/bookings/{{ b.id }}" class="list-item-title">Booking #{{ b.id }}</a>
+            <span class="text-muted">Client: {{ b.client.full_name }} · QAR {{ "%.2f"|format(b.worker_payout) }} payout</span>
+          </div>
+          <span class="status-badge status-{{ b.status.value }}">{{ b.status.value | title }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <p>No bookings yet. Complete your profile to get discovered by clients!</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Reviews -->
+    <div class="dash-panel">
+      <div class="panel-header">
+        <h2>⭐ My Reviews</h2>
+        {% if profile %}
+        <a href="/workers/{{ current_user.id }}" class="btn btn-sm btn-outline">View Public Profile</a>
+        {% endif %}
+      </div>
+      {% if reviews %}
+        {% for review in reviews %}
+        <div class="review-dash-item">
+          <div class="review-header-mini">
+            <div class="review-rating-mini">
+              {% for i in range(review.rating) %}⭐{% endfor %}
+            </div>
+            <span class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+          {% if review.comment %}
+          <p class="review-comment-mini">{{ review.comment }}</p>
+          {% endif %}
+          <p class="review-author-mini">
+            — {% if review.is_anonymous %}Anonymous Client{% else %}{{ review.reviewer.full_name }}{% endif %}
+          </p>
+        </div>
+        {% endfor %}
+        {% if reviews|length >= 5 %}
+        <a href="/workers/{{ current_user.id }}#reviews" class="see-all">View all reviews →</a>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <p>No reviews yet. Complete jobs to receive reviews from clients!</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Transaction History -->
+    <div class="dash-panel dash-panel-full">
+      <div class="panel-header">
+        <h2>Transaction History</h2>
+      </div>
+      {% if transactions %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in transactions %}
+          <tr>
+            <td class="text-muted">{{ tx.created_at.strftime('%d %b %Y') }}</td>
+            <td><span class="tx-type tx-{{ tx.transaction_type }}">{{ tx.transaction_type | replace('_', ' ') | title }}</span></td>
+            <td>{{ tx.description or '—' }}</td>
+            <td class="{% if tx.amount < 0 %}text-danger{% else %}text-success{% endif %}">
+              {% if tx.amount >= 0 %}+{% endif %}QAR {{ "%.2f"|format(tx.amount) }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="text-muted">No transactions yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

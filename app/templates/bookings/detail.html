@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Booking #{{ booking.id }} — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page-narrow">
+
+  <div class="breadcrumb">
+    <a href="/bookings/">My Bookings</a> / Booking #{{ booking.id }}
+  </div>
+
+  <div class="booking-detail-card">
+
+    <!-- Status Banner -->
+    <div class="booking-status-banner status-banner-{{ booking.status.value }}">
+      <div>
+        <h1>Booking #{{ booking.id }}</h1>
+        <p>{{ booking.job.title }}</p>
+      </div>
+      <span class="status-badge-lg status-{{ booking.status.value }}">{{ booking.status.value | title }}</span>
+    </div>
+
+    <!-- Parties -->
+    <div class="parties-row">
+      <div class="party-card">
+        <span class="party-label">Client</span>
+        <div class="party-avatar">{{ booking.client.full_name[0] | upper }}</div>
+        <span class="party-name">{{ booking.client.full_name }}</span>
+      </div>
+      <div class="party-arrow">→</div>
+      <div class="party-card">
+        <span class="party-label">Worker</span>
+        <div class="party-avatar worker-avatar-color">{{ booking.worker.full_name[0] | upper }}</div>
+        <span class="party-name">{{ booking.worker.full_name }}</span>
+      </div>
+    </div>
+
+    <!-- Financial Breakdown -->
+    <div class="escrow-breakdown">
+      <h3>💰 Payment Breakdown</h3>
+      <div class="breakdown-grid">
+        <div class="breakdown-section">
+          <h4>Client Side</h4>
+          <div class="breakdown-row">
+            <span>Job Total ({{ booking.duration_hours }}h × QAR {{ "%.0f"|format(booking.agreed_rate) }})</span>
+            <span>QAR {{ "%.2f"|format(booking.total_amount) }}</span>
+          </div>
+          <div class="breakdown-row text-muted">
+            <span>Platform fee ({{ "%.0f"|format(booking.platform_fee_percent) }}%)</span>
+            <span>QAR {{ "%.2f"|format(booking.client_fee) }}</span>
+          </div>
+          <div class="breakdown-row breakdown-total">
+            <span><strong>Client Pays Total</strong></span>
+            <span><strong>QAR {{ "%.2f"|format(booking.client_total) }}</strong></span>
+          </div>
+        </div>
+        <div class="breakdown-section">
+          <h4>Worker Side</h4>
+          <div class="breakdown-row">
+            <span>Job Total</span>
+            <span>QAR {{ "%.2f"|format(booking.total_amount) }}</span>
+          </div>
+          <div class="breakdown-row text-muted">
+            <span>Platform fee ({{ "%.0f"|format(booking.platform_fee_percent) }}%)</span>
+            <span>– QAR {{ "%.2f"|format(booking.worker_fee) }}</span>
+          </div>
+          <div class="breakdown-row breakdown-total">
+            <span><strong>Worker Receives</strong></span>
+            <span class="text-success"><strong>QAR {{ "%.2f"|format(booking.worker_payout) }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Escrow Status -->
+      <div class="escrow-status">
+        <span class="escrow-icon">🔐</span>
+        <div>
+          <strong>Escrow Status:</strong>
+          {% if booking.payment_status.value == 'held' %}
+            <span class="badge badge-yellow">Funds Held in Escrow</span>
+            <p class="text-muted">Payment is secured. Funds will be released to the worker upon job completion.</p>
+          {% elif booking.payment_status.value == 'released' %}
+            <span class="badge badge-green">Payment Released</span>
+            <p class="text-muted">Funds have been transferred to the worker.</p>
+          {% elif booking.payment_status.value == 'refunded' %}
+            <span class="badge badge-gray">Refunded</span>
+            <p class="text-muted">Payment was refunded to the client.</p>
+          {% else %}
+            <span class="badge badge-gray">{{ booking.payment_status.value | title }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+      <h3>Timeline</h3>
+      <div class="timeline-item {% if booking.created_at %}done{% endif %}">
+        <span class="tl-dot"></span>
+        <div>
+          <strong>Booking Created</strong>
+          <span class="text-muted">{{ booking.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+        </div>
+      </div>
+      <div class="timeline-item {% if booking.confirmed_at %}done{% endif %}">
+        <span class="tl-dot"></span>
+        <div>
+          <strong>Confirmed</strong>
+          <span class="text-muted">{% if booking.confirmed_at %}{{ booking.confirmed_at.strftime('%d %b %Y, %H:%M') }}{% else %}Pending{% endif %}</span>
+        </div>
+      </div>
+      <div class="timeline-item {% if booking.client_confirmed_complete or booking.worker_confirmed_complete %}done{% endif %}">
+        <span class="tl-dot"></span>
+        <div>
+          <strong>Completion Confirmations</strong>
+          {% if booking.status.value == 'completed' %}
+            <span class="text-muted">Both parties confirmed</span>
+          {% else %}
+            <div style="font-size: 0.85rem; margin-top: 0.25rem;">
+              Client: {% if booking.client_confirmed_complete %}<span style="color: #16a34a;">✅ Confirmed</span>{% else %}<span style="color: #d97706;">⏳ Pending</span>{% endif %}<br/>
+              Worker: {% if booking.worker_confirmed_complete %}<span style="color: #16a34a;">✅ Confirmed</span>{% else %}<span style="color: #d97706;">⏳ Pending</span>{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="timeline-item {% if booking.completed_at %}done{% endif %}">
+        <span class="tl-dot"></span>
+        <div>
+          <strong>Payment Released</strong>
+          <span class="text-muted">{% if booking.completed_at %}{{ booking.completed_at.strftime('%d %b %Y, %H:%M') }}{% else %}Pending both confirmations{% endif %}</span>
+        </div>
+      </div>
+    </div>
+
+    {% if booking.notes %}
+    <div class="booking-notes">
+      <h3>Notes</h3>
+      <p>{{ booking.notes }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="booking-actions">
+      {% if current_user.id == booking.client_id %}
+
+        {% if booking.status.value == 'pending' %}
+        <form method="POST" action="/bookings/{{ booking.id }}/confirm">
+          <button type="submit" class="btn btn-primary">Confirm Booking</button>
+        </form>
+        {% endif %}
+
+        {% if booking.status.value in ['confirmed', 'in_progress'] %}
+          {% if not booking.client_confirmed_complete %}
+          <form method="POST" action="/bookings/{{ booking.id }}/complete">
+            <button type="submit" class="btn btn-success">✅ Mark Job Complete (Client)</button>
+          </form>
+          <p class="text-muted" style="margin-top: 0.5rem;">
+            ⚠️ Payment will only be released when both you and the worker mark the job complete.
+          </p>
+          {% else %}
+          <div class="alert" style="background: #f0fdf4; border: 1px solid #86efac; padding: 1rem; border-radius: 8px;">
+            ✅ You've confirmed completion. Waiting for worker to confirm.
+          </div>
+          {% endif %}
+        {% endif %}
+
+        {% if booking.status.value not in ['completed', 'cancelled'] %}
+        <form method="POST" action="/bookings/{{ booking.id }}/cancel"
+              onsubmit="return confirm('Cancel this booking? Payment will be refunded if held.')">
+          <button type="submit" class="btn btn-danger btn-sm">Cancel Booking</button>
+        </form>
+        {% endif %}
+
+      {% elif current_user.id == booking.worker_id %}
+        {% if booking.status.value in ['confirmed', 'in_progress'] %}
+          {% if not booking.worker_confirmed_complete %}
+          <form method="POST" action="/bookings/{{ booking.id }}/complete">
+            <button type="submit" class="btn btn-success">✅ Mark Job Complete (Worker)</button>
+          </form>
+          <p class="text-muted" style="margin-top: 0.5rem;">
+            ⚠️ Payment will only be released when both you and the client mark the job complete.
+          </p>
+          {% else %}
+          <div class="alert" style="background: #f0fdf4; border: 1px solid #86efac; padding: 1rem; border-radius: 8px;">
+            ✅ You've confirmed completion. Waiting for client to confirm.
+          </div>
+          {% endif %}
+        {% endif %}
+
+        {% if booking.status.value not in ['completed', 'cancelled'] %}
+        <form method="POST" action="/bookings/{{ booking.id }}/cancel"
+              onsubmit="return confirm('Cancel this booking?')">
+          <button type="submit" class="btn btn-danger btn-sm">Decline / Cancel</button>
+        </form>
+        {% endif %}
+      {% endif %}
+
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/bookings/" class="btn btn-outline">Back to Bookings</a>
+        
+        {% if booking.status.value == 'completed' and current_user.id == booking.client_id and chat_id %}
+          <a href="/chats/{{ chat_id }}#review-section" class="btn btn-primary">
+            ⭐ Write Review
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

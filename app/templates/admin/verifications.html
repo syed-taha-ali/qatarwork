@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Admin - Verifications — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="dashboard-header">
+    <div>
+      <h1>🛡️ Verification Admin</h1>
+      <p class="text-muted">Review pending verification applications</p>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  {% if request.query_params.get('success') %}
+  <div class="alert" style="background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+    ✅ {{ request.query_params.get('success') }}
+  </div>
+  {% endif %}
+
+  {% if request.query_params.get('error') %}
+  <div class="alert" style="background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+    ⚠️ {{ request.query_params.get('error') }}
+  </div>
+  {% endif %}
+
+  <!-- Pending Applications -->
+  <div style="margin-top: 2rem;">
+    <h2>Pending Applications ({{ pending_users|length }})</h2>
+    
+    {% if pending_users|length == 0 %}
+    <div style="text-align: center; padding: 3rem; background: var(--surface-alt); border-radius: 8px;">
+      <p class="text-muted">No pending applications</p>
+    </div>
+    {% else %}
+    <div style="display: grid; gap: 1.5rem; margin-top: 1.5rem;">
+      {% for user in pending_users %}
+      <div class="verification-card">
+        <div class="ver-header">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            {% if user.profile_picture %}
+            <img src="{{ user.profile_picture }}" alt="{{ user.full_name }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" />
+            {% else %}
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--maroon); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">
+              {{ user.full_name[0] | upper }}
+            </div>
+            {% endif %}
+            <div>
+              <h3 style="margin: 0;">{{ user.full_name }}</h3>
+              <p style="margin: 0.25rem 0 0; color: #666;">{{ user.role.value|title }} | {{ user.email }}</p>
+              <small style="color: #999;">Applied: {{ user.verification_applied_at.strftime('%d %b %Y, %H:%M') if user.verification_applied_at else 'N/A' }}</small>
+            </div>
+          </div>
+          <a href="/admin/verifications/{{ user.id }}" class="btn btn-primary">Review</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Recently Reviewed -->
+  <div style="margin-top: 3rem;">
+    <h2>Recently Reviewed</h2>
+    {% if reviewed_users|length == 0 %}
+    <p class="text-muted">No reviews yet</p>
+    {% else %}
+    <div style="display: grid; gap: 1rem; margin-top: 1rem;">
+      {% for user in reviewed_users %}
+      <div style="padding: 1rem; background: white; border: 1px solid var(--border); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>{{ user.full_name }}</strong>
+          <span class="text-muted"> - {{ user.role.value|title }}</span>
+        </div>
+        <span style="padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;
+                     {% if user.verification_status == 'approved' %}background: #f0fdf4; color: #166534;{% else %}background: #fef2f2; color: #991b1b;{% endif %}">
+          {{ user.verification_status|title }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.verification-card {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+.ver-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+@media (max-width: 768px) {
+  .ver-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>
+{% endblock %}

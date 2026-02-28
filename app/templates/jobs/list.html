@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Open Jobs — QatarWork{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <div class="page-header">
+    <h1>Open Jobs</h1>
+    <p class="text-muted">Clients looking for skilled workers</p>
+  </div>
+
+  <!-- Filter Bar -->
+  <form method="GET" action="/jobs/" class="filter-bar">
+    <select name="skill" onchange="this.form.submit()">
+      <option value="">All Skills</option>
+      {% for skill in skills %}
+      <option value="{{ skill }}" {% if skill == selected_skill %}selected{% endif %}>
+        {{ skill_labels.get(skill, skill | title) }}
+      </option>
+      {% endfor %}
+    </select>
+    <label class="checkbox-label" style="margin-left: 1rem;">
+      <input type="checkbox" name="verified_only" value="true" 
+             {% if verified_only %}checked{% endif %}
+             onchange="this.form.submit()">
+      ✓ Verified Clients Only
+    </label>
+    {% if selected_skill or verified_only %}
+    <a href="/jobs/" class="btn btn-sm btn-outline">Clear Filters</a>
+    {% endif %}
+  </form>
+
+  {% if jobs %}
+  <div class="jobs-grid">
+    {% for job in jobs %}
+    <a href="/jobs/{{ job.id }}" class="job-card">
+      <div class="job-header">
+        <span class="skill-badge">{{ skill_labels.get(job.skill_required.value, job.skill_required.value | title) }}</span>
+        <span class="badge badge-green">Open</span>
+      </div>
+      <h3 class="job-title">{{ job.title }}</h3>
+      <p class="job-desc">{{ job.description[:120] }}{% if job.description | length > 120 %}…{% endif %}</p>
+      <div class="job-meta">
+        <span>⏱ {{ job.duration_hours }}h</span>
+        <span>💰 QAR {{ "%.0f"|format(job.budget) }}</span>
+        <span>📍 {{ job.location }}</span>
+      </div>
+      <div class="job-footer">
+        <span class="text-muted">
+          By {{ job.client.full_name }}
+          {% if job.client.verification_status == 'approved' %}
+          <span style="display: inline-flex; align-items: center; gap: 0.15rem; padding: 0.15rem 0.4rem; background: #f0fdf4; color: #166534; border-radius: 3px; font-size: 0.7rem; font-weight: 600; vertical-align: middle; margin-left: 0.25rem;">
+            ✓
+          </span>
+          {% endif %}
+        </span>
+        <span class="text-muted">{{ job.created_at.strftime('%d %b') }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-page">
+    <p>No open jobs found{% if selected_skill %} for this skill{% endif %}.</p>
+    {% if current_user and current_user.role.value == 'client' %}
+    <a href="/jobs/create" class="btn btn-primary">Post a Job</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

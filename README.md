@@ -195,7 +195,7 @@ http://localhost:8000
 ### Getting Started
 - **README.md** (this file) - Quick start and overview
 - **Email Verification Setup** [EMAIL_SETUP.md](/setup/EMAIL_SETUP.md)
-- **Email Verification Setup** [SECURITY.md](/setup/WHATSAPP_SETUP.md)
+- **Email Verification Setup** [WHATSAPP_SETUP.md](/setup/WHATSAPP_SETUP.md)
 
 ### /docs/Security
 - **SECURITY.md** - Complete security documentation

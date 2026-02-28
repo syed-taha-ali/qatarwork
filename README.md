@@ -353,16 +353,12 @@ cp .env.example .env
 nano .env  # Edit with production values
 
 # 5. Set up database
-# See PRODUCTION_DEPLOYMENT.md for PostgreSQL setup
 
 # 6. Configure Nginx
-# See PRODUCTION_DEPLOYMENT.md for Nginx configuration
 
 # 7. Start application
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
-
-**See:** [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) for complete guide
 
 ---
 

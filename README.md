@@ -207,7 +207,7 @@ http://localhost:8000
 - **Dockerfile** - Container deployment
 
 ### Development
-- **CODE_REVIEW.md** - Final code quality review
+- **CODE REVIEW** - Final code quality review [CODE_REVIEW.md](/docs/CODE_REVIEW.md)
 - **API Documentation** - Available at `/api/docs` when running
 
 **Total Documentation:** 3,500+ lines across 11 files

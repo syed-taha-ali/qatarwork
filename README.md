@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green)](https://fastapi.tiangolo.com)
 [![Security](https://img.shields.io/badge/Security-8.4%2F10-brightgreen)](/docs/SECURITY.md)
-[![Code Quality](https://img.shields.io/badge/Code%20Quality-9.2%2F10-brightgreen)](/docs/CODE_REVIEW.md)
+[![Code Quality](https://img.shields.io/badge/Code%20Quality-7.85%2F10-brightgreen)](/docs/CODE_REVIEW.md)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 
 ---
